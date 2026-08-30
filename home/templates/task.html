@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Todo App</h1>
+    <p>Basic Todo App</p>
+    <a href="{% url 'index'%}">Index</a>
+    <a href="{% url 'contact'%}">Contact</a>
+    <a href="{% url 'home'%}">Home</a>
+    <a href ="{% url 'todo'%}">Todo</a>
+
+    <br>
+    <h2>Tasks</h2>
+
+    <ul>
+        {% for task in tasks %}
+            <li>{{ task.title }} - {% if task.completed %}Completed{% else %}Not Completed{% endif %}</li>
+        {% empty %}
+            <li>No tasks available.</li>
+        {% endfor %}
+    </ul>
+
+
+{% endblock %}

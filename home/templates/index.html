@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <h1>Welcome to the Home Page</h1>
+    <p>This is the index page of the home app.</p>
+    <a href="{%url 'home'%}">Home</a>
+    <a href="{% url 'contact'%}">Contact</a>
+    <a href ="{% url 'task'%}">Tasks</a>
+    <a href ="{% url 'todo'%}">Todo</a>
+
+    <br>
+    {{fruits}}
+    <ol>
+    {% for fruit in fruits %}
+        <li><p>{{ fruit }}</p></li>
+    {% endfor %}
+    </ol>
+{% endblock %}

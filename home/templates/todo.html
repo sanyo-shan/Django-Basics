@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Todo App</h1>
+<p>Basic Todo App</p>
+
+<a href="{% url 'index' %}">Index</a>
+<a href="{% url 'contact' %}">Contact</a>
+<a href="{% url 'home' %}">Home</a>
+
+<br><br>
+
+<!-- ADD TODO FORM -->
+<form method="post" action="{% url 'todo' %}">
+    {% csrf_token %}
+
+    <input type="text"
+           name="title"
+           placeholder="Task Title"
+           required>
+
+    <label for="completed">Completed:</label>
+
+    <input type="checkbox"
+           name="completed"
+           id="completed">
+
+    <button type="submit">
+        Add Task
+    </button>
+</form>
+
+
+<h2>Tasks</h2>
+
+<ul>
+
+    {% for task in tasks %}
+
+        <li>
+
+            {{ task.id }} - {{ task.title }} -
+
+            {% if task.completed %}
+                Completed
+            {% else %}
+                Not Completed
+            {% endif %}
+
+
+            <!-- EDIT BUTTON -->
+
+            <button type="button"
+                    class="btn btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editModal"
+                    data-task-id="{{ task.id }}"
+                    data-task-title="{{ task.title }}"
+                    data-task-completed="{{ task.completed }}">
+
+                <i class="bi bi-pencil-square"></i>
+
+            </button>
+
+
+            <!-- DELETE BUTTON -->
+
+            <a href="{% url 'delete_todo' task.id %}">
+                <i class="bi bi-trash"
+                   style="color: red;">
+                </i>
+            </a>
+
+        </li>
+
+    {% empty %}
+
+        <li>No tasks available.</li>
+
+    {% endfor %}
+
+</ul>
+
+
+<!-- ========================= -->
+<!-- EDIT TODO MODAL -->
+<!-- ========================= -->
+
+<div class="modal fade"
+     id="editModal"
+     tabindex="-1"
+     aria-labelledby="editModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <!-- MODAL HEADER -->
+
+            <div class="modal-header">
+
+                <h5 class="modal-title"
+                    id="editModalLabel">
+
+                    Edit Todo
+
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <!-- MODAL BODY -->
+
+            <div class="modal-body">
+
+                <form method="post"
+                      id="editForm">
+
+                    {% csrf_token %}
+
+
+                    <!-- TODO TITLE -->
+
+                    <label for="editTitle">
+                        Task Title
+                    </label>
+
+                    <input type="text"
+                           name="title"
+                           id="editTitle"
+                           class="form-control"
+                           required>
+
+
+                    <br>
+
+
+                    <!-- COMPLETED -->
+
+                    <label for="editCompleted">
+
+                        <input type="checkbox"
+                               name="completed"
+                               id="editCompleted">
+
+                        Completed
+
+                    </label>
+
+
+                    <br><br>
+
+
+                    <!-- UPDATE BUTTON -->
+
+                    <button type="submit"
+                            class="btn btn-success">
+
+                        Update Task
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================= -->
+
+<script>
+
+const editModal = document.getElementById('editModal');
+
+// Whenever the modal is shown, this event will be triggered
+editModal.addEventListener('show.bs.modal', function (event) {
+
+    // Get the button that was clicked
+    const button = event.relatedTarget;
+
+
+    // Get task information from the button
+    const taskId = button.getAttribute('data-task-id');
+
+    const taskTitle = button.getAttribute('data-task-title');
+
+    const taskCompleted =
+        button.getAttribute('data-task-completed');
+
+
+    // Put the task title inside the input
+    document.getElementById('editTitle').value =
+        taskTitle;
+
+
+    // Set checkbox value
+    document.getElementById('editCompleted').checked =
+        taskCompleted === 'True';
+
+
+    // Set Django URL for the form
+    document.getElementById('editForm').action =
+        `{% url 'edit_todo' task_id=0 %}`.replace('0', taskId);
+
+});
+
+</script>
+
+
+<!-- BOOTSTRAP JAVASCRIPT -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+{% endblock %}
+```
