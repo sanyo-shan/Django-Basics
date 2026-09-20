@@ -1,6 +1,13 @@
 from django.http import HttpResponse
 from django.shortcuts import render,redirect
-from .models import Task
+from .models import Task, Person, Department, Employee
+from faker import Faker
+import random
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 # Create your views here.
 def home(request):
@@ -80,3 +87,100 @@ def edit_todo(request, task_id):
 
     return render(request, 'todo.html', context={'task': task})
 
+
+def seed_fake_data(request):
+    fake = Faker()
+
+    for _ in range(50):  # Generate 50 fake persons
+        Department.objects.create(name=fake.company())
+
+    for _ in range(50):  # Generate 50 fake tasks
+        departments = Department.objects.all()
+        Employee.objects.create(
+            name=fake.name(),
+            email=fake.unique.email(),
+            age=fake.random_int(min=18, max=65),
+            salary=fake.random_number(digits=5),
+            city=fake.city(),
+            joining_date=fake.date_this_decade(),
+            is_active=fake.boolean(),
+            department=random.choice(Department.objects.all())  # Assign a random department
+        )
+
+    return HttpResponse("Fake data seeded successfully.")
+
+def employee_list(request):
+    employees = Employee.objects.all()
+    return render(request, 'employee_list.html', context={'employees': employees})
+
+def employee_department(request, department_id):
+    try:
+        department = Department.objects.get(id=department_id)
+    except Department.DoesNotExist:
+        return HttpResponse("Department not found.", status=404)
+
+    employees = Employee.objects.filter(department=department)
+    return render(request, 'employee_list.html', context={'department': department, 'employees': employees})
+
+def employee_detail(request, employee_id):
+    try:
+        employee = Employee.objects.get(id=employee_id)
+    except Employee.DoesNotExist:
+        return HttpResponse("Employee not found.", status=404)
+
+    return render(request, 'employee_detail.html', context={'employee': employee})
+
+@csrf_exempt
+def register(request):
+    # messages.info(request, "Registering a new user.")
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        password = request.POST.get('password')
+
+        print(f"Received registration data: username={username}, firstname={firstname}, lastname={lastname}")
+
+        # Check if the username or email already exists
+        if User.objects.filter(username=username).exists():
+            messages.warning(request, "Username already exists. Please choose a different username.")
+            return redirect('register')
+
+        # Create a new user
+        user = User.objects.create_user(username=username, first_name=firstname, last_name=lastname, password=password)
+        #user.set_password(password)  # Hash the password
+        user.save()
+        messages.success(request, "User registered successfully.")
+
+    return render(request, 'registration.html')
+
+@csrf_exempt
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
+
+        print(request.user.is_authenticated)  # Check if the user is authenticated before login
+
+        login(request, user)  # Log the user in if authentication is successful
+
+        if user is not None:
+            print(request.user.is_authenticated)
+            return redirect('home_view')  # Redirect to the home view after successful login
+        else:
+            return HttpResponse("Invalid username or password!")
+
+@login_required
+def home_view(request):
+    return render(request, 'home.html',
+                context={'user': request.user})
+
+def logout_view(request):
+    logout(request)
+    return redirect('register')  # Redirect to the registration page after logout

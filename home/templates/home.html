@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    <h2> Login Successful</h2>
     <h1>Welcome to the Home Page</h1>
     <p>This is the home page of the home app.</p>
     <a href="{% url 'index'%}">Index</a>
@@ -9,5 +10,9 @@
     <a href ="{% url 'todo'%}">Todo</a>
     <br>
     <h2>Tasks</h2>
+
+    <h3>Welcome: {{ user.first_name }} {{ user.last_name }}</h3>
+
+    <a href="{% url 'logout' %}">Logout</a>
     
 {% endblock %}
