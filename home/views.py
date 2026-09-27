@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, request
 from django.shortcuts import render,redirect
 from .models import Task, Person, Department, Employee
 from faker import Faker
@@ -184,3 +184,147 @@ def home_view(request):
 def logout_view(request):
     logout(request)
     return redirect('register')  # Redirect to the registration page after logout
+
+
+print("*********Django REST Framework*************")
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from .serializers import (PersonSerializer, DepartmentSerializer, EmployeeSerializer,
+                          CreateEmployeeSerializer, PersonSerializerWithRepresentation,
+                          RegisterSerializer, LoginSerializer, FoodSerializer)
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from .models import Foods
+
+@api_view(['GET'])
+def api_home(request):
+    return Response({"message": "Welcome to the API!"})
+
+
+@api_view(['GET', 'POST'])
+def api_person(request):
+    if request.method == 'GET':
+        persons = Person.objects.all()
+        person_serializer = PersonSerializer(persons, many=True)
+        return Response({"persons": person_serializer.data})
+        
+    elif request.method == 'POST':
+        person_serializer = PersonSerializer(data=request.data)
+        if person_serializer.is_valid():
+            person_serializer.save()
+            return Response({"message": "Person created successfully.", "person": person_serializer.data})
+
+
+@api_view(['GET', 'POST'])
+def api_department(request):
+    if request.method == 'GET':
+        departments = Department.objects.all()
+        department_serializer = DepartmentSerializer(departments, many=True)
+        return Response({"departments": department_serializer.data})
+        
+    elif request.method == 'POST':
+        department_serializer = DepartmentSerializer(data=request.data)
+        if department_serializer.is_valid():
+            department_serializer.save()
+            return Response({"message": "Department created successfully.", "department": department_serializer.data})
+
+@api_view(['GET'])
+def api_employee(request):
+    if request.method == 'GET':
+        employees = Employee.objects.all()
+        employee_serializer = EmployeeSerializer(employees, many=True)
+        return Response({"employees": employee_serializer.data})
+
+@api_view(['POST'])
+def api_create_employee(request):
+    if request.method == 'POST':
+        employee_serializer = CreateEmployeeSerializer(data=request.data)
+        if employee_serializer.is_valid():
+            employee_serializer.save()
+            return Response({"message": "Employee created successfully.", "employee": employee_serializer.data})
+        else:
+            return Response({"errors": employee_serializer.errors}, status=400)
+
+@api_view(['GET'])
+def api_person_detail(request, person_id):
+    try:
+        person = Person.objects.get(id=person_id)
+    except Person.DoesNotExist:
+        return Response({"error": "Person not found."}, status=404)
+
+    person_serializer = PersonSerializerWithRepresentation(person)
+    return Response({"person": person_serializer.data})
+
+
+print("*********DRF Authentication*************")
+
+@api_view(['POST'])
+def api_register(request):
+    data = request.data
+    register_serializer = RegisterSerializer(data=data)
+    if register_serializer.is_valid():
+        register_serializer.save()
+        return Response(register_serializer.data)
+    return Response({"errors": register_serializer.errors}, status=400)
+
+@api_view(['POST'])
+def api_login(request):
+    data = request.data
+    login_serializer = LoginSerializer(data=data)
+    if login_serializer.is_valid():
+        username = login_serializer.validated_data['username']
+        password = login_serializer.validated_data['password']
+        user = authenticate(request, username=username, password=password)
+
+    if user is not None:
+        token, _ = Token.objects.get_or_create(user=user) 
+        return Response({"message": "Login successful.", "token": token.key})
+    else:
+        return Response({"error": "Invalid username or password."}, status=401)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_login_details(request):
+    if request.user.is_authenticated:
+        return Response({"message": "User is authenticated.", "username": request.user.username})
+    else:
+        return Response({"message": "User is not authenticated."}, status=401)
+
+@api_view(['GET'])
+def api_food(request):
+    foods = Foods.objects.filter(user=request.user)  # Filter foods by the authenticated user
+    food_serializer = FoodSerializer(foods, many=True)
+    return Response({"foods": food_serializer.data})
+
+@api_view(['POST'])
+def api_create_food(request):
+    food_serializer = FoodSerializer(data=request.data)
+    if food_serializer.is_valid():
+        food_serializer.save(user=request.user)  # Associate the food with the authenticated user
+        return Response({"message": "Food created successfully.", "food": food_serializer.data})
+    else:
+        return Response({"errors": food_serializer.errors}, status=400)
+
+
+print("********* JWT Token *************")
+from rest_framework_simplejwt.tokens import RefreshToken
+
+@api_view(['POST'])
+def jwt_login(request):
+    if request.method == 'POST':
+        data = request.data
+        login_serializer = LoginSerializer(data=data)
+        if login_serializer.is_valid():
+            username = login_serializer.validated_data['username']
+            password = login_serializer.validated_data['password']
+            user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        else:
+            return Response({"error": "Invalid username or password."}, status=401)

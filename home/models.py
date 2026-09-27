@@ -10,6 +10,10 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        verbose_name = "Task"
+        verbose_name_plural = "Tasksyyy"
+
 class Person(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
@@ -38,7 +42,18 @@ class Employee(models.Model):
     joining_date = models.DateField()
     is_active = models.BooleanField(default=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE) 
+    skills = models.ManyToManyField('Skills', related_name='employees', blank=True)
 
 class Skills(models.Model):
     name = models.CharField(max_length=100)
-    employee = models.ManyToManyField(Employee, related_name='skills')
+
+class Foods(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name

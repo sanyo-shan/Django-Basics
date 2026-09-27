@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 
 urlpatterns = [
@@ -16,4 +16,5 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('home/', views.home_view, name='home_view'),
     path('logout/', views.logout_view, name='logout'),
+    path('api/', include('api.api_url')),  # Include the API URLs
 ]
